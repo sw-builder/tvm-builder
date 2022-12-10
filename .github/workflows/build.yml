@@ -8,5 +8,5 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: .github/workflows/build.yml
+          files: README.md
 
