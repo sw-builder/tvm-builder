@@ -1,0 +1,42 @@
+name: tvm-builder
+on:
+  push:
+    tags:
+      - v*
+
+env:
+  TVM_VERSION: 0.9.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: xundaoxd/ml:latest
+      options: -u 0:0
+    steps:
+      - name: Checkout
+        run: |
+          wget -O- https://dlcdn.apache.org/tvm/tvm-v${TVM_VERSION}/apache-tvm-src-v${TVM_VERSION}.tar.gz | tar -C /tmp -xvz
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: tvm-build
+          path: /tmp/apache-tvm-src-v${TVM_VERSION}/build
+      - name: Build
+        run: |
+          (cd /tmp/apache-tvm-src-v${TVM_VERSION} \
+            && mkdir -p build && cp cmake/config.cmake build \
+            && sed -i 's/set(USE_CUDA OFF)/set(USE_CUDA ON)/;s/set(USE_CUDNN OFF)/set(USE_CUDNN ON)/;s/set(USE_LLVM OFF)/set(USE_LLVM ON)/' build/config.cmake \
+            && cmake -B build -G Ninja && cmake --build build -j $(cat /proc/cpuinfo | grep processor | wc -l) \
+            && cd python && python setup.py bdist_wheel)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tvm
+          path: /tmp/apache-tvm-src-v${{ env.TVM_VERSION }}/
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: /tmp/apache-tvm-src-v${{ env.TVM_VERSION }}/python/dist/tvm-${{ env.TVM_VERSION }}-cp37-cp37m-linux_x86_64.whl
+
