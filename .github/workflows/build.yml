@@ -1,8 +1,6 @@
 name: tvm-builder
-on:
-  push:
-    tags:
-      - v*
+
+on: [push]
 
 env:
   TVM_VERSION: 0.10.0
@@ -21,7 +19,7 @@ jobs:
         uses: actions/cache@v3
         with:
           key: tvm-build
-          path: /tmp/apache-tvm-src-v${TVM_VERSION}/build
+          path: /tmp/apache-tvm-src-v${{ env.TVM_VERSION }}/build
       - name: Build
         run: |
           (cd /tmp/apache-tvm-src-v${TVM_VERSION} \
